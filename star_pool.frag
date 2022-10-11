@@ -11,7 +11,7 @@ float round(float a) {
 }
 
 float floorSDF(vec3 p) {
-  return dot(p, vec3(0, 0, 1)) + 1.0;
+  return dot(p, vec3(0, 0, 1)) + 0.0;
 }
 
 float sceneSDF(vec3 p) {
@@ -23,13 +23,14 @@ vec2 texCoords(vec3 p) {
 }
 
 vec4 colorFor(vec2 uv) {
-  float gridWidth = 0.01;
+  float radius = 0.1;
+  vec2 proximity = abs(floor(uv + 0.5) - uv);
 
-  if (abs(round(uv.x) - uv.x) < gridWidth || abs(round(uv.y) - uv.y) < gridWidth ) {
-    return vec4(1.0);
-  } else {
-    return vec4(0.2, 0.2, 0.2, 1.0);
+  if (length(proximity) < radius) {
+    return vec4(vec3(1.0), 1.0);
   }
+
+  return  vec4(vec3(0.2), 1.0);
 }
 
 float trace(vec3 ro, vec3 rdn) {
@@ -51,7 +52,7 @@ float trace(vec3 ro, vec3 rdn) {
 void main(void) {
   vec2 xy = gl_FragCoord.xy - u_resolution.xy / 2.0;
 
-  vec3 ro = vec3(u_time, 0.0, 1.0);
+  vec3 ro = vec3(u_time * 3.0, 0.0, 1.0);
 
   float cameraX = u_resolution.y / tan(radians(45.0) / 2.0);
   vec3 rdn = normalize(vec3(cameraX, xy.x, xy.y));
