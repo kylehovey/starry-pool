@@ -4,6 +4,7 @@
 #define MAX_STEPS 500
 #define EPSILON 0.001
 
+precision highp float;
 uniform float u_time;
 uniform vec2 u_mouse;
 uniform vec2 u_resolution;
