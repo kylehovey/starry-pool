@@ -16,22 +16,39 @@ float round(float a) {
   return floor(a + 0.5);
 }
 
-float floorSDF(vec3 p) {
-  return dot(p, vec3(0, 0, 1)) + 0.0;
+float sinSource(vec2 origin, float frequency, float phase, vec2 point) {
+    float t = distance(origin, point);
+
+    return sin(TAU * (frequency * t - phase) - u_time);
 }
 
-float sceneSDF(vec3 p) {
-  return floorSDF(p);
+float swell(vec2 uv) {
+  float sum = 0.0;
+
+  for (int i = -COUNT_RADIUS; i < COUNT_RADIUS; ++i) {
+      sum += sinSource(vec2(100*i, 0.0), 0.01, sin(u_time / 5.0), uv);
+  }
+
+  for (int i = -COUNT_RADIUS; i < COUNT_RADIUS; ++i) {
+      sum += sinSource(vec2(0.0, 100*i), 0.01, cos(u_time / 5.0), uv);
+  }
+
+  return sum;
 }
 
 vec2 texCoords(vec3 p) {
   return p.xy;
 }
 
-float sinSource(vec2 origin, float frequency, float phase, vec2 point) {
-    float t = distance(origin, point);
+float floorSDF(vec3 p) {
+  vec2 uv = texCoords(p);
+  float swellHeight = swell(uv) * 2.0;
 
-    return sin(TAU * (frequency * t - phase) - u_time);
+  return dot(p, vec3(0, 0, 1)) + 0.0 - swellHeight;
+}
+
+float sceneSDF(vec3 p) {
+  return floorSDF(p);
 }
 
 vec3 colorSin(float value) {
@@ -45,20 +62,12 @@ vec3 colorSin(float value) {
 }
 
 vec4 colorFor(vec2 uv) {
-  float sum = 0.0;
-
-  for (int i = -COUNT_RADIUS; i < COUNT_RADIUS; ++i) {
-      sum += sinSource(vec2(100*i, 0.0), 0.02, sin(u_time / 5.0), uv);
-  }
-
-  for (int i = -COUNT_RADIUS; i < COUNT_RADIUS; ++i) {
-      sum += sinSource(vec2(0.0, 100*i), 0.02, cos(u_time / 5.0), uv);
-  }
+  float intensity = swell(uv);
 
   float envelope = 1.0 / (1.0 + exp(pow(length(uv) / 300.0, 2.0)));
 
-  vec3 saturated = colorSin(envelope * sum);
-  vec3 desaturated = vec3(sum / 6.0) + 0.1 * saturated;
+  vec3 saturated = colorSin(envelope * intensity);
+  vec3 desaturated = vec3(intensity / 6.0) + 0.15 * saturated;
 
   float brightness = smoothstep(100.0 / length(uv), 0.0, 0.15);
 
@@ -84,7 +93,7 @@ float trace(vec3 ro, vec3 rdn) {
 void main(void) {
   vec2 xy = gl_FragCoord.xy - u_resolution.xy / 2.0;
 
-  vec3 ro = vec3(-40.0, 0.0, 20.0);
+  vec3 ro = vec3(-40.0, 0.0, 50.0);
 
   float cameraX = u_resolution.y / tan(radians(120.0) / 2.0);
   vec3 rdn = normalize(vec3(cameraX, xy.x, xy.y));
