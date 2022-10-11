@@ -4,7 +4,10 @@
 #define MAX_STEPS 500
 #define EPSILON 0.001
 
+#ifdef GL_ES
 precision highp float;
+#endif
+
 uniform float u_time;
 uniform vec2 u_mouse;
 uniform vec2 u_resolution;
@@ -31,12 +34,11 @@ float sinSource(vec2 origin, float frequency, float phase, vec2 point) {
     return sin(TAU * (frequency * t - phase) - u_time);
 }
 
-vec4 colorSin(float value) {
-    vec4 preNormal =  vec4(
+vec3 colorSin(float value) {
+    vec3 preNormal =  vec3(
         sin(value),
         sin(value - TAU/3.0),
-        sin(value - 2.0 * TAU/3.0),
-        1.0
+        sin(value - 2.0 * TAU/3.0)
     );
     
     return 2.0 * preNormal - 1.0;
@@ -55,12 +57,12 @@ vec4 colorFor(vec2 uv) {
 
   float envelope = 1.0 / (1.0 + exp(pow(length(uv) / 300.0, 2.0)));
 
-  vec4 saturated = colorSin(envelope * sum);
-  vec4 desaturated = vec4(vec3(sum / 6.0), 1.0) + 0.1 * saturated;
+  vec3 saturated = colorSin(envelope * sum);
+  vec3 desaturated = vec3(sum / 6.0) + 0.1 * saturated;
 
-  float brightness = smoothstep(100.0 / length(uv), 0.0, 0.1);
+  float brightness = smoothstep(100.0 / length(uv), 0.0, 0.15);
 
-  return brightness * desaturated;
+  return vec4(brightness * desaturated, 1.0);
 }
 
 float trace(vec3 ro, vec3 rdn) {
