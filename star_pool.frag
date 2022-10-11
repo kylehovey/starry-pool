@@ -2,6 +2,10 @@
 #define MAX_STEPS 255
 #define EPSILON 0.0001
 
+uniform float u_time;
+uniform vec2 u_mouse;
+uniform vec2 u_resolution;
+
 float floorSDF(vec3 ro, vec3 rdn) {
   float cA = dot(rdn, vec3(0, 0, -1));
 
@@ -25,18 +29,18 @@ float trace(vec3 ro, vec3 rdn) {
   return MAX_DIST;
 }
 
-void mainImage(out vec4 fragColor, in vec2 fragCoord) {
-  vec2 xy = fragCoord - iResolution.xy / 2.0;
+void main(void) {
+  vec2 xy = gl_FragCoord.xy - u_resolution.xy / 2.0;
   vec3 ro = vec3(0.0, 0.0, 0.1);
   vec3 rdn = normalize(vec3(0, xy.x, -xy.y));
 
   float dist = trace(ro, rdn);
 
   if (dist < MAX_DIST) {
-    fragColor = vec4(vec3(1.0), 1.0);
+    gl_FragColor = vec4(vec3(1.0), 1.0);
 
     return;
   }
 
-  fragColor = vec4(vec3(0.0), 1.0);
+  gl_FragColor = vec4(vec3(0.0), 1.0);
 }
