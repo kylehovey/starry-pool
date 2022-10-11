@@ -1,5 +1,5 @@
-#define MAX_DIST 100.0
-#define MAX_STEPS 255
+#define MAX_DIST 1000.0
+#define MAX_STEPS 500
 #define EPSILON 0.01
 
 uniform float u_time;
@@ -7,7 +7,11 @@ uniform vec2 u_mouse;
 uniform vec2 u_resolution;
 
 float floorSDF(vec3 p) {
-  return dot(p, vec3(0, 0, 1));
+  return dot(p, vec3(0, 0, 1)) + 0.0;
+}
+
+float sceneSDF(vec3 p) {
+  return floorSDF(p);
 }
 
 
@@ -15,13 +19,13 @@ float trace(vec3 ro, vec3 rdn) {
   float depth = 0.0;
 
   for (int i = 0; i < MAX_STEPS; ++i) {
-    float dist = floorSDF(ro + depth * rdn);
+    float dist = sceneSDF(ro + depth * rdn);
 
     if (dist < EPSILON) return depth;
 
     depth += dist;
 
-    if (depth > MAX_DIST) return MAX_DIST;
+    if (depth > MAX_DIST) break;
   }
 
   return MAX_DIST;
@@ -30,13 +34,16 @@ float trace(vec3 ro, vec3 rdn) {
 void main(void) {
   vec2 xy = gl_FragCoord.xy - u_resolution.xy / 2.0;
 
-  vec3 ro = vec3(0.0, 0.0, 0.01);
-  vec3 rdn = normalize(vec3(0, xy.x, xy.y));
+  vec3 ro = vec3(0.0, 0.0, 1.0);
+  float cameraX = u_resolution.y / tan(radians(90.0) / 2.0);
+  vec3 rdn = normalize(vec3(cameraX, xy.x, xy.y));
 
   float dist = trace(ro, rdn);
 
   if (dist < MAX_DIST) {
-    gl_FragColor = vec4(vec3(1.0), 1.0);
+    float intensity = smoothstep(dist / 5.0, 0.0, 1.0);
+
+    gl_FragColor = vec4(vec3(intensity), 1.0);
 
     return;
   }
