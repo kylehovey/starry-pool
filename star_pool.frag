@@ -1,3 +1,5 @@
+#define TAU 6.28318530718
+#define COUNT_RADIUS 2
 #define MAX_DIST 1000.0
 #define MAX_STEPS 500
 #define EPSILON 0.001
@@ -22,15 +24,42 @@ vec2 texCoords(vec3 p) {
   return p.xy;
 }
 
-vec4 colorFor(vec2 uv) {
-  float radius = 0.1;
-  vec2 proximity = abs(floor(uv + 0.5) - uv);
+float sinSource(vec2 origin, float frequency, float phase, vec2 point) {
+    float t = distance(origin, point);
 
-  if (length(proximity) < radius) {
-    return vec4(vec3(1.0), 1.0);
+    return sin(TAU * (frequency * t - phase) - u_time);
+}
+
+vec4 colorSin(float value) {
+    vec4 preNormal =  vec4(
+        sin(value),
+        sin(value - TAU/3.0),
+        sin(value - 2.0 * TAU/3.0),
+        1.0
+    );
+    
+    return 2.0 * preNormal - 1.0;
+}
+
+vec4 colorFor(vec2 uv) {
+  float sum = 0.0;
+
+  for (int i = -COUNT_RADIUS; i < COUNT_RADIUS; ++i) {
+      sum += sinSource(vec2(100*i, 0.0), 0.02, sin(u_time / 5.0), uv);
   }
 
-  return  vec4(vec3(0.2), 1.0);
+  for (int i = -COUNT_RADIUS; i < COUNT_RADIUS; ++i) {
+      sum += sinSource(vec2(0.0, 100*i), 0.02, cos(u_time / 5.0), uv);
+  }
+
+  float envelope = 1.0 / (1.0 + exp(pow(length(uv) / 300.0, 2.0)));
+
+  vec4 saturated = colorSin(envelope * sum);
+  vec4 desaturated = vec4(vec3(sum / 6.0), 1.0) + 0.1 * saturated;
+
+  float brightness = smoothstep(100.0 / length(uv), 0.0, 0.1);
+
+  return brightness * desaturated;
 }
 
 float trace(vec3 ro, vec3 rdn) {
@@ -52,9 +81,9 @@ float trace(vec3 ro, vec3 rdn) {
 void main(void) {
   vec2 xy = gl_FragCoord.xy - u_resolution.xy / 2.0;
 
-  vec3 ro = vec3(u_time * 3.0, 0.0, 1.0);
+  vec3 ro = vec3(-40.0, 0.0, 20.0);
 
-  float cameraX = u_resolution.y / tan(radians(45.0) / 2.0);
+  float cameraX = u_resolution.y / tan(radians(120.0) / 2.0);
   vec3 rdn = normalize(vec3(cameraX, xy.x, xy.y));
 
   float dist = trace(ro, rdn);
