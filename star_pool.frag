@@ -1,15 +1,13 @@
 #define MAX_DIST 100.0
 #define MAX_STEPS 255
-#define EPSILON 0.0001
+#define EPSILON 0.01
 
 uniform float u_time;
 uniform vec2 u_mouse;
 uniform vec2 u_resolution;
 
-float floorSDF(vec3 ro, vec3 rdn) {
-  float cA = dot(rdn, vec3(0, 0, -1));
-
-  return cA * ro.z;
+float floorSDF(vec3 p) {
+  return dot(p, vec3(0, 0, 1));
 }
 
 
@@ -17,7 +15,7 @@ float trace(vec3 ro, vec3 rdn) {
   float depth = 0.0;
 
   for (int i = 0; i < MAX_STEPS; ++i) {
-    float dist = floorSDF(ro, rdn);
+    float dist = floorSDF(ro + depth * rdn);
 
     if (dist < EPSILON) return depth;
 
@@ -31,8 +29,9 @@ float trace(vec3 ro, vec3 rdn) {
 
 void main(void) {
   vec2 xy = gl_FragCoord.xy - u_resolution.xy / 2.0;
-  vec3 ro = vec3(0.0, 0.0, 0.1);
-  vec3 rdn = normalize(vec3(0, xy.x, -xy.y));
+
+  vec3 ro = vec3(0.0, 0.0, 0.01);
+  vec3 rdn = normalize(vec3(0, xy.x, xy.y));
 
   float dist = trace(ro, rdn);
 
